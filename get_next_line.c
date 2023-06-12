@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: nicolas <nicolas@student.42.fr>            +#+  +:+       +#+        */
+/*   By: nprudenc <nprudenc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/05/30 14:25:20 by nprudenc          #+#    #+#             */
-/*   Updated: 2023/06/10 10:39:29 by nicolas          ###   ########.fr       */
+/*   Created: 2023/06/04 19:30:45 by nicolas           #+#    #+#             */
+/*   Updated: 2023/06/12 15:20:01 by nprudenc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,10 +31,28 @@ char	*my_strchr(const char *s, int c)
 			return ((char *)s);
 		s++;
 	}
-	if (!(unsigned char)c)
-		return ((char *)s);
 	return (NULL);
 }
+
+// char	*ft_strdup(const char *s)
+// {
+// 	int		counter;
+// 	int		i;
+// 	char	*str;
+
+// 	counter = ft_strlen(s) + 1;
+// 	str = malloc(counter * sizeof(char));
+// 	if (!str)
+// 		return (NULL);
+// 	i = 0;
+// 	while (s[i])
+// 	{
+// 		str[i] = s[i];
+// 		i++;
+// 	}
+// 	str[i] = '\0';
+// 	return (str);
+// }
 
 char	*str_concat(char *str, char *buff)
 {	
@@ -43,41 +61,35 @@ char	*str_concat(char *str, char *buff)
 	int			j;
 
 	str = malloc(line_cnt(buff) + 1 * sizeof(char));
-	next_line = malloc(line_cnt(buff) + 1 * sizeof(char));
+	if (my_strchr(buff, '\n'))
+	{
+		next_line = malloc(line_cnt(my_strchr(buff, '\n') + 1) * sizeof(char));
+		next_line = my_strchr(buff, '\n');
+	}
 	if (!str || !next_line)
 		return (NULL);
+	next_line = my_strchr(buff, '\n');
 	i = 0;
-	j = 0;
-	while (buff[i] != '\n') // anda até o término da primeira linha
-		i++;
-	while (buff[++i])
-		next_line[j++] = buff[i]; // captura o que tem após o final da primeira linha
-	i = 0;
+	j = 1;
+	if (next_line)
+		while (next_line[j] && next_line[j] != '\n')
+			str[i++] = next_line[j++];
 	j = 0;
 	while (buff[j] && buff[j] != '\n')
 		str[i++] = buff[j++];
 	str[i] = buff[j];
+	free (buff);
 	return (str);
 }
 
 char	*save_line(char *saved_line, char *buff, int buff_cnt)
 {
 	static int	i = 0;
-	static char	*teste;
 	int			j;
-	int			k;
 
 	j = 0;
-	k = 0;
-	teste = malloc(buff_cnt * sizeof(char));
 	while (buff[j] && buff_cnt--)
-	{
-		saved_line[i] = buff[j];
-		if (my_strchr(saved_line, '\n'))
-			teste[k++] = buff[j];
-		i++;
-		j++;
-	}
+		saved_line[i++] = buff[j++];
 	saved_line[i] = buff[j];
 	if (my_strchr(saved_line, '\n'))
 		i = 0;
@@ -104,34 +116,54 @@ char	*get_next_line(int fd)
 			break ;
 		i = read(fd, buffer, BUFFER_SIZE);
 	}
-	if (i == 0)
-		return (NULL);
 	return (str_concat(line, saved_buffer));
 }
 
-// Na primeira chamada ele vem certo pois o read está na posição inicial,
-// na segunda já vai dar ruim pq o read andou até lá na frente
-// preciso pensar em alguma forma de salvar e enviar a primeira linha
-// salvar a próxima linha, e se for a última linha inserir 
-// caractere nulo no final
+/*
+	2 Problemas para resolver:
 
-// int	main(void)
-// {
-// 	FILE	*arquivo;
-// 	char	*linha;
+	1 - saved_line não foi mallocado e por conta disso
+	quando tentamos acessar seu local na memória na função
+	save_line,	obtemos um segmentation fault. (resolver)
 
-// 	arquivo = fopen("teste.txt", "r");
-// 	if (!arquivo)
-// 	{
-// 		printf("Erro ao abrir o arquivo.\n");
-// 		return (1);
-// 	}
-// 	linha = get_next_line(fileno(arquivo));
-// 	printf("%s\n", linha);
-// 	linha = get_next_line(fileno(arquivo));
-// 	printf("%s\n", linha);
-// 	linha = get_next_line(fileno(arquivo));
-// 	printf("%s\n", linha);
-// 	fclose(arquivo);
-// 	return (0);
-// }
+	2 - De acordo com a regra do nosso while, a função
+	read vai ler sem parar até o final do arquivo. Isso
+	esta realmente correto? (possível solução, implementar strchr
+	para checar o saved_buffer) -> após isso chamar o str_concat
+	com as configurações para devolver uma string limpa. (resolvido)
+
+	3 - Encontrar alguma forma de salvar o inicio da próxima linha, e
+	quando a get_next_line for chamada novamente, retornar a próxima
+	contendo seu inicío anteriormente salvo (resolver)
+	|
+	|-> possível solucão usar strchr para devolver uma string a partir
+		dos caractéres previamente lidos da próx linha (nesse caso estaremos
+		devolvendo todo o restante do texto de nosso arquivo)
+*/
+
+// line_cnt -> função para contar todos os caracteres de uma linha
+
+// Variável buffer -> armazena o que foi lido do read
+// Variável estática saved_buffer -> armazena o que foi lido do buffer
+// concatenando até encontrar o primeiro \n
+// Variável line -> armazena e concatena tudo do saved_buffer
+// até o primeiro \n ou \0
+
+int	main(void)
+{
+	FILE	*arquivo;
+	char	*linha;
+
+	arquivo = fopen("teste.txt", "r");
+	if (!arquivo)
+	{
+		printf("Erro ao abrir o arquivo.\n");
+		return (1);
+	}
+	linha = get_next_line(fileno(arquivo));
+	printf("%s\n", linha);
+	linha = get_next_line(fileno(arquivo));
+	printf("%s", linha);
+	fclose(arquivo);
+	return (0);
+}
