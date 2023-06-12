@@ -6,7 +6,7 @@
 /*   By: nprudenc <nprudenc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 19:30:45 by nicolas           #+#    #+#             */
-/*   Updated: 2023/06/12 15:20:01 by nprudenc         ###   ########.fr       */
+/*   Updated: 2023/06/12 15:23:34 by nprudenc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -149,21 +149,21 @@ char	*get_next_line(int fd)
 // Variável line -> armazena e concatena tudo do saved_buffer
 // até o primeiro \n ou \0
 
-int	main(void)
-{
-	FILE	*arquivo;
-	char	*linha;
+// int	main(void)
+// {
+// 	FILE	*arquivo;
+// 	char	*linha;
 
-	arquivo = fopen("teste.txt", "r");
-	if (!arquivo)
-	{
-		printf("Erro ao abrir o arquivo.\n");
-		return (1);
-	}
-	linha = get_next_line(fileno(arquivo));
-	printf("%s\n", linha);
-	linha = get_next_line(fileno(arquivo));
-	printf("%s", linha);
-	fclose(arquivo);
-	return (0);
-}
+// 	arquivo = fopen("teste.txt", "r");
+// 	if (!arquivo)
+// 	{
+// 		printf("Erro ao abrir o arquivo.\n");
+// 		return (1);
+// 	}
+// 	linha = get_next_line(fileno(arquivo));
+// 	printf("%s\n", linha);
+// 	linha = get_next_line(fileno(arquivo));
+// 	printf("%s", linha);
+// 	fclose(arquivo);
+// 	return (0);
+// }
