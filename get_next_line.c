@@ -6,24 +6,50 @@
 /*   By: nprudenc <nprudenc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 19:30:45 by nicolas           #+#    #+#             */
-/*   Updated: 2023/06/12 15:23:34 by nprudenc         ###   ########.fr       */
+/*   Updated: 2023/06/13 19:24:31 by nprudenc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 #include <stdio.h>
 
-int	line_cnt(const char *str)
-{
+int	ft_strlen(const char	*s)
+{	
 	int	i;
 
 	i = 0;
-	while (str[i] && str[i] != '\n')
+	while (*s)
+	{	
 		i++;
+		s++;
+	}
 	return (i);
 }
 
-char	*my_strchr(const char *s, int c)
+char	*ft_strjoin(char const *s1, char const *s2)
+{
+	size_t	s1_len;
+	size_t	s2_len;
+	int		i;
+	char	*str;
+
+	if (!s1)
+		return (NULL);
+	i = 0;
+	s1_len = ft_strlen(s1);
+	s2_len = ft_strlen(s2) + 1;
+	str = (char *)malloc((s1_len + s2_len) * sizeof(char));
+	if (!str)
+		return (NULL);
+	while (*s1)
+		str[i++] = *s1++;
+	while (*s2)
+		str[i++] = *s2++;
+	str[i] = '\0';
+	return (str);
+}
+
+char	*ft_strchr(const char *s, int c)
 {
 	while (*s)
 	{	
@@ -34,89 +60,115 @@ char	*my_strchr(const char *s, int c)
 	return (NULL);
 }
 
-// char	*ft_strdup(const char *s)
-// {
-// 	int		counter;
-// 	int		i;
-// 	char	*str;
+char	*ft_strdup(const char *s)
+{
+	int		counter;
+	int		i;
+	char	*str;
 
-// 	counter = ft_strlen(s) + 1;
-// 	str = malloc(counter * sizeof(char));
-// 	if (!str)
-// 		return (NULL);
-// 	i = 0;
-// 	while (s[i])
-// 	{
-// 		str[i] = s[i];
-// 		i++;
-// 	}
-// 	str[i] = '\0';
-// 	return (str);
-// }
-
-char	*str_concat(char *str, char *buff)
-{	
-	static char	*next_line;
-	int			i;
-	int			j;
-
-	str = malloc(line_cnt(buff) + 1 * sizeof(char));
-	if (my_strchr(buff, '\n'))
-	{
-		next_line = malloc(line_cnt(my_strchr(buff, '\n') + 1) * sizeof(char));
-		next_line = my_strchr(buff, '\n');
-	}
-	if (!str || !next_line)
+	counter = ft_strlen(s) + 1;
+	str = (char *)malloc(counter * sizeof(char));
+	if (!str)
 		return (NULL);
-	next_line = my_strchr(buff, '\n');
 	i = 0;
-	j = 1;
-	if (next_line)
-		while (next_line[j] && next_line[j] != '\n')
-			str[i++] = next_line[j++];
-	j = 0;
-	while (buff[j] && buff[j] != '\n')
-		str[i++] = buff[j++];
-	str[i] = buff[j];
-	free (buff);
+	while (s[i])
+	{
+		str[i] = s[i];
+		i++;
+	}
+	str[i] = '\0';
 	return (str);
 }
 
-char	*save_line(char *saved_line, char *buff, int buff_cnt)
+char	*save_line(int fd, char *line_storage, char *buffer)
 {
-	static int	i = 0;
-	int			j;
+	int		bytes_read;
 
-	j = 0;
-	while (buff[j] && buff_cnt--)
-		saved_line[i++] = buff[j++];
-	saved_line[i] = buff[j];
-	if (my_strchr(saved_line, '\n'))
-		i = 0;
-	return (saved_line);
+	bytes_read = read(fd, buffer, BUFFER_SIZE);
+	while (bytes_read > 0)
+	{	
+		if (!line_storage)
+			line_storage = ft_strdup("");
+		line_storage = ft_strjoin(line_storage, buffer);
+		if (ft_strchr(line_storage, '\n'))
+			break ;
+		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		if (bytes_read < 0)
+			return (NULL);
+		buffer[bytes_read] = '\0';
+	}
+	return (line_storage);
 }
+
+char	*clean_line(char* line)
+{
+	char	*str;
+	int		i;
+	int		j;
+
+	i = 0;
+	j = 0;
+	while (line[i] && line[i] != '\n')
+		i++;
+	str = malloc((i + 1) * sizeof(char));
+	if (!str)
+		return (NULL);
+	i = 0;
+	while (line[i] && line[i] != '\n')
+		str[j++] = line[i++];
+	str[j] = line[i];
+	return (str);
+}
+
+// função para limpar a line, e salvar o início da pŕoxima linha no line_storage
+// char	*save_storage(char *line, char *line_storage)
+// {	
+// 	int	i;
+
+// 	i = 0;
+// 	return (line_storage);
+// }
 
 char	*get_next_line(int fd)
 {	
 	char		*buffer;
-	static char	*saved_buffer;
+	static char	*line_storage;
 	char		*line;
-	int			i;
 
-	buffer = malloc(BUFFER_SIZE + 1 * sizeof(char));
-	saved_buffer = malloc(1000 * sizeof(char));
-	line = "";
-	if (!buffer || !saved_buffer)
+	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
-	i = read(fd, buffer, BUFFER_SIZE);
-	while (i > 0)
-	{	
-		saved_buffer = save_line(saved_buffer, buffer, i);
-		if (my_strchr(saved_buffer, '\n'))
-			break ;
-		i = read(fd, buffer, BUFFER_SIZE);
+	buffer = malloc((BUFFER_SIZE + 1) * sizeof(char));
+	if (!buffer)
+		return (NULL);
+	line = save_line(fd, line_storage, buffer);
+	free(buffer);
+	line_storage = ft_strchr(line, '\n') + 1;
+	line = clean_line(line);
+	return (line);
+}
+
+int	main(void)
+{
+	FILE	*arquivo;
+	char	*linha;
+
+	arquivo = fopen("teste.txt", "r");
+	if (!arquivo)
+	{
+		printf("Erro ao abrir o arquivo.\n");
+		return (1);
 	}
-	return (str_concat(line, saved_buffer));
+	linha = get_next_line(fileno(arquivo));
+	printf("%s", linha);
+	free(linha);
+	linha = get_next_line(fileno(arquivo));
+	printf("%s", linha);
+	free(linha);
+	linha = get_next_line(fileno(arquivo));
+	printf("%s", linha);
+	free(linha);
+	fclose(arquivo);
+	return (0);
 }
 
 /*
@@ -148,22 +200,3 @@ char	*get_next_line(int fd)
 // concatenando até encontrar o primeiro \n
 // Variável line -> armazena e concatena tudo do saved_buffer
 // até o primeiro \n ou \0
-
-// int	main(void)
-// {
-// 	FILE	*arquivo;
-// 	char	*linha;
-
-// 	arquivo = fopen("teste.txt", "r");
-// 	if (!arquivo)
-// 	{
-// 		printf("Erro ao abrir o arquivo.\n");
-// 		return (1);
-// 	}
-// 	linha = get_next_line(fileno(arquivo));
-// 	printf("%s\n", linha);
-// 	linha = get_next_line(fileno(arquivo));
-// 	printf("%s", linha);
-// 	fclose(arquivo);
-// 	return (0);
-// }
