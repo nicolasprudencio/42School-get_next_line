@@ -6,13 +6,11 @@
 /*   By: nprudenc <nprudenc@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/04 19:30:45 by nicolas           #+#    #+#             */
-/*   Updated: 2023/06/15 19:03:38 by nprudenc         ###   ########.fr       */
+/*   Updated: 2023/06/15 19:41:51 by nprudenc         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-#include <stdio.h>
-#include <fcntl.h>
 
 char	*load_buffer(int fd, char *line_storage, char *buffer)
 {
